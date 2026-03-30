@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inkwell — Drawing Studio</title>
+  <meta name="description" content="Full-featured drawing app with layers, brush styles, vector pen, and export." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Viewport: zoom/pan applied here via CSS transform -->
+  <div id="viewport">
+    <div id="canvasStack"></div>
+    <canvas id="previewCanvas"></canvas>
+  </div>
+
+  <!-- Zoom badge -->
+  <div class="zoom-badge" id="zoomBadge">100%</div>
+
+  <!-- Drag & Drop Overlay -->
+  <div class="drop-zone" id="dropZone">
+    <div class="dz-inner">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <p>Drop image as trace layer</p>
+    </div>
+  </div>
+
+  <!-- Hidden file input -->
+  <input type="file" id="imageInput" accept="image/*" hidden />
+
+  <!-- ===================== LEFT TOOLBAR ===================== -->
+  <div class="toolbar-left" id="toolbar">
+
+    <!-- Logo -->
+    <div class="tb-logo" title="Inkwell">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/>
+      </svg>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Tools -->
+    <div class="tb-group">
+
+      <!-- Brush with style sub-buttons -->
+      <div class="tool-wrap" id="brushWrap">
+        <button class="tool-btn active" id="brushTool" title="Brush (B)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>
+        </button>
+        <!-- Brush Style Sub-panel -->
+        <div class="sub-panel" id="brushSubPanel">
+          <button class="sub-btn active" data-style="round" title="Round">
+            <svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="currentColor"/></svg>
+          </button>
+          <button class="sub-btn" data-style="calligraphy" title="Calligraphy">
+            <svg width="16" height="16"><ellipse cx="8" cy="8" rx="3" ry="6" transform="rotate(-35 8 8)" fill="currentColor"/></svg>
+          </button>
+          <button class="sub-btn" data-style="spray" title="Spray">
+            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="4" cy="5" r="1.2" fill="currentColor"/><circle cx="9" cy="3" r="1" fill="currentColor"/><circle cx="13" cy="6" r="1.2" fill="currentColor"/><circle cx="6" cy="10" r="1" fill="currentColor"/><circle cx="11" cy="11" r="1.2" fill="currentColor"/><circle cx="3" cy="13" r=".8" fill="currentColor"/></svg>
+          </button>
+          <button class="sub-btn" data-style="marker" title="Marker">
+            <svg width="16" height="16"><rect x="2" y="4" width="12" height="8" rx="3" fill="currentColor" opacity=".6"/></svg>
+          </button>
+          <button class="sub-btn" data-style="pencil" title="Pencil">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="tool-btn" id="penTool" title="Pen/Vector (P)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+      </button>
+
+      <button class="tool-btn" id="bucketTool" title="Paint Bucket (G)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 11L8.5 0.5l-7 7L12 18"/><path d="M19 11c0 0 2 2.4 2 4a2 2 0 0 1-4 0c0-1.6 2-4 2-4z"/>
+        </svg>
+      </button>
+
+      <button class="tool-btn" id="eraserTool" title="Eraser (E)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16c-.8-.8-.8-2 0-2.8L14.8 1.4c.8-.8 2-.8 2.8 0l5 5c.8.8.8 2 0 2.8L11 20"/><path d="M6 11l4 4"/></svg>
+      </button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Color Palette -->
+    <div class="tb-group" id="colorPalette">
+      <button class="color-swatch active" data-color="#FFFFFF" style="--sw:#fff" title="White"></button>
+      <button class="color-swatch" data-color="#FF6B6B" style="--sw:#FF6B6B" title="Coral"></button>
+      <button class="color-swatch" data-color="#FFD93D" style="--sw:#FFD93D" title="Amber"></button>
+      <button class="color-swatch" data-color="#6BCB77" style="--sw:#6BCB77" title="Mint"></button>
+      <button class="color-swatch" data-color="#4D96FF" style="--sw:#4D96FF" title="Sky"></button>
+      <button class="color-swatch" data-color="#C77DFF" style="--sw:#C77DFF" title="Violet"></button>
+      <button class="color-swatch" data-color="#FF9F1C" style="--sw:#FF9F1C" title="Orange"></button>
+      <!-- custom color -->
+      <label class="color-custom" title="Custom color">
+        <input type="color" id="colorPicker" value="#ff6b6b" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      </label>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Brush Size -->
+    <div class="brush-size-ctrl">
+      <span class="brush-preview-dot" id="brushDot"></span>
+      <input type="range" class="v-slider" id="brushSize" min="1" max="60" value="8" orient="vertical" />
+      <span class="sz-val" id="brushLabel">8</span>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Actions -->
+    <div class="tb-group">
+      <button class="icon-btn" id="importBtn" title="Import image (I)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </button>
+      <button class="icon-btn" id="undoBtn" title="Undo (Ctrl+Z)" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+      <button class="icon-btn" id="redoBtn" title="Redo (Ctrl+Y)" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+      </button>
+      <button class="icon-btn danger" id="clearBtn" title="Clear Layer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Export -->
+    <div class="tb-group">
+      <button class="icon-btn" id="exportPng" title="Export PNG">PNG</button>
+      <button class="icon-btn" id="exportSvg" title="Export SVG">SVG</button>
+    </div>
+
+  </div>
+
+  <!-- ===================== LAYERS PANEL ===================== -->
+  <div class="layers-panel" id="layersPanel">
+    <div class="panel-header">
+      <span class="panel-title">Layers</span>
+      <div class="panel-actions">
+        <button class="pl-btn" id="addLayerBtn" title="Add layer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="pl-btn" id="deleteLayerBtn" title="Delete layer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="layers-list" id="layersList"></div>
+  </div>
+
+  <!-- Pen hint -->
+  <div class="pen-hint" id="penHint">Click to add points · Double-click or Enter to finish · Esc to cancel</div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
